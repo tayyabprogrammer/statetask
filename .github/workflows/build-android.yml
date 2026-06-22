@@ -24,6 +24,11 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Install system build tools (autoconf, libtool, etc.)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake autoconf-archive libtool libtool-bin pkg-config build-essential
+
       - name: Install PySide6 and deployment dependencies
         run: |
           pip install pyside6==6.11.1
