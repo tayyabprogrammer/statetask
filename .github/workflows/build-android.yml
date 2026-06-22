@@ -38,6 +38,17 @@ jobs:
           curl -L -O "https://download.qt.io/official_releases/QtForPython/shiboken6/shiboken6-6.11.1-6.11.1-cp311-cp311-android_aarch64.whl"
           ls -la
 
+      - name: Pre-accept all Android SDK licenses
+        run: |
+          mkdir -p "$HOME/.buildozer/android/platform/android-sdk/licenses"
+          cat > "$HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license" << 'EOF'
+          24333f8a63b6825ea9c5514f83c2829b004d1fee
+          d56f5187479451eabf01fb78af6dfcb131a6481e
+          EOF
+          cat > "$HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license" << 'EOF'
+          84831b9409646a918e30573bab4c9c91346d8abd
+          EOF
+
       - name: Run pyside6-android-deploy to build APK
         run: |
           pyside6-android-deploy \
@@ -56,3 +67,4 @@ jobs:
         with:
           name: StudentApp-apk
           path: StudentApp.apk
+
