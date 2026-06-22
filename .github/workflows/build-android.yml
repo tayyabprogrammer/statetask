@@ -1,32 +1,58 @@
-name: Build Android App (.apk)
+name: Build Android APK
+
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
+
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-    - name: Install Buildozer Dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev tk-dev libgdbm-compat-dev
-        pip install --upgrade pip setuptools buildozer
+      - name: Set up Java (required by Android build tools)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-    - name: Build with Buildozer
-      run: |
-        buildozer android debug
+      - name: Install PySide6 and deployment dependencies
+        run: |
+          pip install pyside6==6.11.1
+          pip install jinja2 pkginfo tqdm "packaging==24.1"
+          pip install buildozer cython
 
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: StateLifeApp-Android
-        path: bin/*.apk
+      - name: Download official PySide6/Shiboken6 Android wheels
+        run: |
+          mkdir -p android_wheels
+          cd android_wheels
+          curl -L -O "https://download.qt.io/official_releases/QtForPython/pyside6/pyside6-6.11.1-6.11.1-cp311-cp311-android_aarch64.whl"
+          curl -L -O "https://download.qt.io/official_releases/QtForPython/shiboken6/shiboken6-6.11.1-6.11.1-cp311-cp311-android_aarch64.whl"
+          ls -la
+
+      - name: Run pyside6-android-deploy to build APK
+        run: |
+          pyside6-android-deploy \
+            --wheel-pyside=android_wheels/pyside6-6.11.1-6.11.1-cp311-cp311-android_aarch64.whl \
+            --wheel-shiboken=android_wheels/shiboken6-6.11.1-6.11.1-cp311-cp311-android_aarch64.whl \
+            --name "StudentApp" \
+            -f
+
+      - name: Locate and rename APK
+        run: |
+          find . -name "*.apk" -exec cp {} ./StudentApp.apk \;
+          ls -la *.apk
+
+      - name: Upload APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: StudentApp-apk
+          path: StudentApp.apk
